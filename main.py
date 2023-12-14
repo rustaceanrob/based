@@ -104,7 +104,6 @@ def get_chaintip():
     response = requests.get(endpoints["tip"])
     if response.status_code == 200:
         data = response.json()
-        print(data)
         return str(data)
     else:
         print(f"Error: {response.status_code}")
@@ -348,7 +347,6 @@ async def send_message(message, content):
     try:
         response = handle_message(content=content)
         chunks = split_string_into_chunks(response)
-        print(chunks)
         for chunk in chunks:
             await message.channel.send(chunk)
     except Exception as e:
