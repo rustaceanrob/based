@@ -6,7 +6,6 @@ from metaphor_python import Metaphor
 from openai import OpenAI
 from discord.ext import commands
 import yfinance as yf
-from UrbanDictAPI.main import Query ,WordofTheDay , CategoryDefinitions , GetUserDefinitions
 
 
 load_dotenv()
