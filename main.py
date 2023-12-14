@@ -5,6 +5,7 @@ import requests
 from metaphor_python import Metaphor
 from openai import OpenAI
 from discord.ext import commands
+import yfinance as yf
 
 load_dotenv()
 APEX = os.environ["APEX_TOKEN"]
@@ -13,7 +14,8 @@ SPORTS = os.environ["SPORTS_TOKEN"]
 endpoints = { "mempool": "https://www.blockstream.info/api/mempool/recent", "height":  "https://www.blockstream.info/api/blocks/tip/height",
               "mempool_stats":  "https://www.blockstream.info/api/mempool", "fees": "https://www.blockstream.info/api/fee-estimates",
               "price": "https://api.coinbase.com/v2/exchange-rates?currency=BTC", "tip": "https://blockstream.info/api/blocks/tip/hash",
-              "apex": "https://api.mozambiquehe.re/maprotation?auth=" + APEX + "&version=2", "sports": "https://api.the-odds-api.com/v4/sports/upcoming/odds/?regions=us&bookmakers=betmgm&markets=h2h,spreads,totals&oddsFormat=american&apiKey=" + SPORTS}
+              "apex": "https://api.mozambiquehe.re/maprotation?auth=" + APEX + "&version=2", 
+              "sports": "https://api.the-odds-api.com/v4/sports/upcoming/odds/?regions=us&bookmakers=betmgm&markets=h2h,spreads,totals&oddsFormat=american&apiKey=" + SPORTS }
 
 ## get the apex map rotation
 def get_apex():
@@ -40,7 +42,9 @@ def get_mempool():
         data = response.json()
         formatted_string = ""
         for tx in data:
-            formatted_string = formatted_string + "`" + str(tx) + "`" + "\n\n"
+            formatted_string = formatted_string + "`" + str(tx["txid"]) + "`" + "\n"
+            formatted_string = formatted_string + "`" + str(tx["value"] / 10_000_000) + " bitcoin` was sent"  + "\n"
+            formatted_string = formatted_string + "` transaction size is " + str(tx["vsize"]) + " vbytes for a fee of " + str(tx["fee"]) + " satoshis" + "`" + "\n\n"
 
         return "recent bitcoin transactions: \n\n" + formatted_string
     else:
@@ -89,6 +93,7 @@ def get_price():
             return "price: $" + data["data"]["rates"]["USD"]
         else:
             print(f"Error: {response.status_code}")
+            return "something went wrong brah"
     except Exception as e:
         print(e)
         return "something went wrong brah"
@@ -199,6 +204,29 @@ def get_score(sport):
         print(f"Error: {response.status_code}")
         return "something went wrong brah. i might be out of money"
 
+## get stock info for a symbol
+def get_stock(symbol):
+    symbol = symbol.upper()
+    stock_info = ""
+    try:
+        stock_data = yf.Ticker(symbol)
+        # get the most recent financial data
+        info = stock_data.info
+        stock_info = "\nstock info: \n"
+        latest_price = stock_data.history(period='1d')['Close'].iloc[-1]
+        stock_info = stock_info + "most recent price: $" + str(round(latest_price,2)) + "\n"
+        stock_info = stock_info + "trailing price to earnings P/E: " + str(info['trailingPE']) + "\n"
+        stock_info = stock_info + "earnings per share EPS: " + str(info['trailingEps']) + "\n"
+        stock_info = stock_info + "return on equity ROE: " + str(info['returnOnEquity']) + "\n"
+        stock_info = stock_info + "debt to equity D/E: " + str(info['debtToEquity']) + "\n"
+        stock_info = stock_info + "free cash flow FCF: $" + str(info['freeCashflow']) + "\n"
+        return stock_info
+    except Exception as e:
+        print(e)
+        return "something went wrong brah. you sure that is a stock ticker?"
+
+## split message chunks
+
 
 ## message handler
 def handle_message(content):
@@ -206,19 +234,19 @@ def handle_message(content):
 
     if message == "$based":
         help = "\n"
-        help = "`$based` tells you what the based bot can do\n\n"
-        help = help + "`$ping` ping the whole discord\n\n"
-        help = help + "`$apex` tells you what the current apex maps are\n\n"
-        help = help + "`$gpt` talk to gpt (the woke one)\n\n"
-        help = help + "`$code` make gpt write code\n\n"
-        help = help + "`$search` search the internet like google\n\n"
-        help = help + "`$sports` gambling lines for the day\n\n"
-        help = help + "`$nba` nba scores\n\n"
-        help = help + "`$mlb` mlb scores\n\n"
-        help = help + "`$nfl` nfl scores\n\n"
-        help = help + "`$squadup` tell the discord to hop on apex\n\n"
-        help = help + "`$bitcoin` info about bitcoin\n\n"
-        help = help + "`$mempool` shows the 10 most recent transactions on bitcoin\n\n"
+        help = "`$based` tells you what the based bot can do\n"
+        help = help + "`$ping` tag everyone in the discord\n"
+        help = help + "`$apex` tells you what the current apex maps are\n"
+        help = help + "`$gpt` talk to gpt (the woke one)\n"
+        help = help + "`$code` make gpt write code\n"
+        help = help + "`$search` search the internet like google but with an AI\n"
+        help = help + "`$sports` gambling lines for the day\n"
+        help = help + "`$nba` nba scores\n"
+        help = help + "`$mlb` mlb scores\n"
+        help = help + "`$nfl` nfl scores\n"
+        help = help + "`$squadup` tell the discord to hop on apex\n"
+        help = help + "`$bitcoin` info about bitcoin\n"
+        help = help + "`$mempool` shows the 10 most recent transactions on bitcoin\n"
         return help
     
     if message == "$sports":
@@ -253,6 +281,11 @@ def handle_message(content):
         price = get_price()
         response = response + price
 
+        return response
+    
+    if "$stock" in message:
+        ticker = message.split("$stock")[1].strip()
+        response = get_stock(symbol=ticker)
         return response
     
     if "$search" in message:
@@ -309,15 +342,12 @@ def run_bot():
     @bot.event
     async def on_message(message):
         content = message.content
+
         if message_guard(message=content): return
         if message.author == bot.user: return
         
         await message.channel.typing()
         await send_message(message=message, content=content)
-
-    @bot.event       
-    async def on_member_join(member):
-        await member.send("sup brah thanks for joining my discord")
     
     bot.run(TOKEN)
 
