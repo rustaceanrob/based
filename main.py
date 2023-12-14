@@ -4,14 +4,16 @@ import os
 import requests
 from metaphor_python import Metaphor
 from openai import OpenAI
+from discord.ext import commands
 
 load_dotenv()
 APEX = os.environ["APEX_TOKEN"]
+SPORTS = os.environ["SPORTS_TOKEN"]
 
 endpoints = { "mempool": "https://www.blockstream.info/api/mempool/recent", "height":  "https://www.blockstream.info/api/blocks/tip/height",
               "mempool_stats":  "https://www.blockstream.info/api/mempool", "fees": "https://www.blockstream.info/api/fee-estimates",
               "price": "https://api.coinbase.com/v2/exchange-rates?currency=BTC", "tip": "https://blockstream.info/api/blocks/tip/hash",
-              "apex": "https://api.mozambiquehe.re/maprotation?auth=" + APEX + "&version=2"}
+              "apex": "https://api.mozambiquehe.re/maprotation?auth=" + APEX + "&version=2", "sports": "https://api.the-odds-api.com/v4/sports/upcoming/odds/?regions=us&bookmakers=betmgm&markets=h2h,spreads,totals&oddsFormat=american&apiKey=" + SPORTS}
 
 ## get the apex map rotation
 def get_apex():
@@ -28,6 +30,7 @@ def get_apex():
         return digest
     else:
         print(f"Error: {response.status_code}")
+        return "something went wrong brah"
 
 ## get the 10 most recent transactions in the mempool
 def get_mempool():
@@ -42,6 +45,7 @@ def get_mempool():
         return "recent bitcoin transactions: \n\n" + formatted_string
     else:
         print(f"Error: {response.status_code}")
+        return "something went wrong brah"
 
 ## current height of the bitcoin blockchain
 def get_height():
@@ -52,6 +56,7 @@ def get_height():
         return str(data)
     else:
         print(f"Error: {response.status_code}")
+        return "something went wrong brah"
 
 ## get global mempool stats
 def get_mempool_stats():
@@ -62,6 +67,7 @@ def get_mempool_stats():
         return (data["count"], data["vsize"], data["total_fee"])
     else:
         print(f"Error: {response.status_code}")
+        return "something went wrong brah"
 
 ## bitcoin fees in vb
 def get_fees():
@@ -72,6 +78,7 @@ def get_fees():
         return (round(data["1"],2), round(data["5"],2), round(data["10"],2))
     else:
         print(f"Error: {response.status_code}")
+        return "something went wrong brah"
 
 ## fiat price
 def get_price():
@@ -84,7 +91,7 @@ def get_price():
             print(f"Error: {response.status_code}")
     except Exception as e:
         print(e)
-        return "0"
+        return "something went wrong brah"
 
 ## current blockchain chaintip
 def get_chaintip():
@@ -95,6 +102,7 @@ def get_chaintip():
         return str(data)
     else:
         print(f"Error: {response.status_code}")
+        return "something went wrong brah"
 
 ## gets a response from gpt
 def get_code(prompt):
@@ -104,6 +112,24 @@ def get_code(prompt):
     model="gpt-3.5-turbo",
     messages=[
         {"role": "system", "content": "You are a helpful coding assistant."},
+        {"role": "system", "content": "Provide code examples whenever you can, they are very important to the user."},
+        {"role": "user", "content": prompt},]
+    )
+    code = response.choices[0].message.content
+    if len(code) > 1999:
+        return "that's too much code for discord to handle brah"
+    return response.choices[0].message.content
+
+## gets a response from gpt
+def get_woke(prompt):
+    TOKEN = os.environ["OPEN_AI_TOKEN"]
+    client = OpenAI(api_key=TOKEN)
+    response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "system", "content": "You are a based assistant."},
+        {"role": "system", "content": "The people you interact with do not mind if you hurt their feelings."},
+        {"role": "system", "content": "You are not shy about your opinions"},
         {"role": "user", "content": prompt},]
     )
     return response.choices[0].message.content
@@ -124,9 +150,89 @@ def metaphor_search(prompt):
 
     return "relevant links: \n\n" + formatted_string
 
+## get the odds for upcoming events
+def get_odds():
+    response = requests.get(endpoints["sports"])
+    if response.status_code == 200:
+        data = response.json()
+        lines = "lines from Bet MGM:\n\n"
+        for sport in data[:15]:
+            try: 
+                ml = sport["bookmakers"][0]["markets"][0]['outcomes']
+                spread = sport["bookmakers"][0]["markets"][1]['outcomes']
+                total = sport["bookmakers"][0]["markets"][2]['outcomes']
+
+                lines = lines + str(sport["sport_title"])  + ": " + str(ml[0]["name"]) + ", " + str(ml[0]["price"]) + " vs. " + str(ml[1]["name"]) + ", " + str(ml[1]["price"]) + "\n"
+                lines = lines + str(spread[0]["name"]) + ", " + str(spread[0]["point"]) + " @ " + str(spread[0]["price"]) + " vs. " + str(spread[1]["name"]) + ", " + str(spread[1]["point"]) + " @ " + str(spread[1]["price"]) + "\n"
+                lines = lines + str(total[0]["name"]) + ": " + str(total[0]["point"]) + " @ " + str(total[0]["price"]) + " vs. " + str(total[1]["name"]) + ": " + str(total[1]["point"]) + " @ " + str(total[1]["price"]) + "\n\n"
+
+            except Exception as e:
+                continue
+        return lines
+    else:
+        print(f"Error: {response.status_code}")
+        return "something went wrong brah. i might be out of money"
+
+def get_score(sport):
+    root = f"https://api.the-odds-api.com/v4/sports/{sport}/scores/?daysFrom=1&apiKey={SPORTS}"
+    response = requests.get(root)
+    if response.status_code == 200:
+        data = response.json()
+        scores = "scores: \n\n"
+        for score in data[:15]:
+            try: 
+                home = score["scores"][0]
+                away = score["scores"][1]
+                did_complete = score["completed"] == True
+                if did_complete:
+                    scores = scores + str(home["name"]) + " " + str(home["score"]) + " vs " + str(away["name"]) + " " + str(away["score"]) + "\n\n"
+                else:
+                    scores = scores = scores + "LIVE: " + str(home["name"]) + " " + str(home["score"]) + " vs " + str(away["name"]) + " " + str(away["score"]) + "\n\n"
+
+            except Exception as e:
+                continue
+        return scores
+    else:
+        print(f"Error: {response.status_code}")
+        return "something went wrong brah. i might be out of money"
+
+
 ## message handler
 def handle_message(content):
     message = content.lower()
+
+    if message == "$based":
+        help = "\n"
+        help = "`$based` tells you what the based bot can do\n\n"
+        help = help + "`$ping` ping the whole discord\n\n"
+        help = help + "`$apex` tells you what the current apex maps are\n\n"
+        help = help + "`$gpt` talk to gpt (the woke one)\n\n"
+        help = help + "`$code` make gpt write code\n\n"
+        help = help + "`$search` search the internet like google\n\n"
+        help = help + "`$sports` gambling lines for the day\n\n"
+        help = help + "`$nba` nba scores\n\n"
+        help = help + "`$mlb` mlb scores\n\n"
+        help = help + "`$nfl` nfl scores\n\n"
+        help = help + "`$squadup` tell the discord to hop on apex\n\n"
+        help = help + "`$bitcoin` info about bitcoin\n\n"
+        help = help + "`$mempool` shows the 10 most recent transactions on bitcoin\n\n"
+        return help
+    
+    if message == "$sports":
+        lines = get_odds()
+        return lines
+    
+    if message == "$nba":
+        scores = get_score("basketball_nba")
+        return scores
+    
+    if message == "$mlb":
+        scores = get_score("baseball_mlb")
+        return scores
+    
+    if message == "$nfl":
+        scores = get_score("americanfootball_nfl")
+        return scores
 
     if message == "$mempool":
         mempool = get_mempool()
@@ -155,10 +261,21 @@ def handle_message(content):
         prompt = message.split("$code")[1]
         response = get_code(prompt=prompt)
         return response
+    
+    if "$gpt" in message:
+        prompt = message.split("$gpt")[1]
+        response = get_woke(prompt=prompt)
+        return response
 
     if message == "$apex":
         maps = get_apex()
         return maps
+    
+    if message == "$squadup":
+        return "@everyone " + "https://tenor.com/view/apex-dj-khaled-gif-22989297"
+    
+    if message == "$ping":
+        return "@everyone " + "https://tenor.com/view/signs-batman-signal-light-gif-16095450"
     
     return 
 
@@ -170,30 +287,36 @@ async def send_message(message, content):
     except Exception as e:
         print(e)
 
+def message_guard(message):
+    if message == "$apex" or message == "$bitcoin" or message == "$mempool" or "$search" in message or "$gpt" in message or "$code" in message or message == "$ping" or message == "$squadup" or message == "$based" or message == "$sports" or message == "$nba" or message == "$mlb" or message == "$nfl" or "$stock" in message:
+        return False
+    return True
+
 ## run the bot and ignore events that the bot sent itself
 def run_bot():
     TOKEN = os.environ['DISCORD_TOKEN']
-    client = discord.Client(intents=discord.Intents.all())
+    intents = discord.Intents.default()
+    intents.message_content = True
+    bot = commands.Bot(command_prefix="$", intents=intents)
 
-    @client.event
+    @bot.event
     async def on_ready():
-        print(f'{client.user} is running')
+        print(f'{bot.user} is running')
 
-    @client.event
+    @bot.event
     async def on_message(message):
         content = message.content
-
-        if message.author == client.user:
-            return
+        if message_guard(message=content): return
+        if message.author == bot.user: return
         
-        # log:
-        # username = str(message.author)
-        # user_message = str(message.content)
-        # channel = str(message.channel)
-
+        await message.channel.typing()
         await send_message(message=message, content=content)
-            
-    client.run(TOKEN)
+
+    @bot.event       
+    async def on_member_join(member):
+        await member.send("sup brah thanks for joining my discord")
+    
+    bot.run(TOKEN)
 
 if __name__ == "__main__":
     run_bot()
