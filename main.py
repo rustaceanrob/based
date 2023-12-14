@@ -118,7 +118,7 @@ def get_code(prompt):
     code = response.choices[0].message.content
     if len(code) > 1999:
         return "that's too much code for discord to handle brah"
-    return response.choices[0].message.content
+    return code
 
 ## gets a response from gpt
 def get_woke(prompt):
@@ -132,7 +132,10 @@ def get_woke(prompt):
         {"role": "system", "content": "You are not shy about your opinions"},
         {"role": "user", "content": prompt},]
     )
-    return response.choices[0].message.content
+    msg = response.choices[0].message.content
+    if len(msg) > 1999:
+        return "the response from GPT was way too woke brah"
+    return msg
 
 ## searches for relevant articles and returns a list of 5
 def metaphor_search(prompt):
