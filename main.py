@@ -6,6 +6,8 @@ from metaphor_python import Metaphor
 from openai import OpenAI
 from discord.ext import commands
 import yfinance as yf
+from UrbanDictAPI.main import Query ,WordofTheDay , CategoryDefinitions , GetUserDefinitions
+
 
 load_dotenv()
 APEX = os.environ["APEX_TOKEN"]
@@ -43,8 +45,8 @@ def get_mempool():
         formatted_string = ""
         for tx in data:
             formatted_string = formatted_string + "`transaction id: " + str(tx["txid"]) + "`" + "\n\n"
-            formatted_string = formatted_string + "`" + str(tx["value"] / 10_000_000) + " bitcoin was sent" + "`" + "\n"
-            formatted_string = formatted_string + "` transaction size is " + str(tx["vsize"]) + " vbytes for a fee of " + str(tx["fee"]) + " satoshis" + "`" + "\n\n"
+            formatted_string = formatted_string + "`" + str(tx["value"] / 100_000_000) + " bitcoin was sent" + "`" + "\n"
+            formatted_string = formatted_string + "`transaction size is " + str(tx["vsize"]) + " vbytes for a fee of " + str(tx["fee"]) + " satoshis" + "`" + "\n"
 
         return "recent bitcoin transactions: \n\n" + formatted_string
     else:
@@ -121,8 +123,8 @@ def get_code(prompt):
         {"role": "user", "content": prompt},]
     )
     code = response.choices[0].message.content
-    if len(code) > 1999:
-        return "that's too much code for discord to handle brah"
+    # if len(code) > 1999:
+    #     return "that's too much code for discord to handle brah"
     return code
 
 ## gets a response from gpt
@@ -138,8 +140,8 @@ def get_woke(prompt):
         {"role": "user", "content": prompt},]
     )
     msg = response.choices[0].message.content
-    if len(msg) > 1999:
-        return "the response from GPT was way too woke brah"
+    # if len(msg) > 1999:
+    #     return "the response from GPT was way too woke brah"
     return msg
 
 ## searches for relevant articles and returns a list of 5
@@ -156,7 +158,7 @@ def metaphor_search(prompt):
     for res in response.results:
         formatted_string = formatted_string + f"[{res.title}]({res.url})" + "\n\n"
 
-    return "relevant links: \n\n" + formatted_string
+    return "\n" + formatted_string
 
 ## get the odds for upcoming events
 def get_odds():
@@ -164,7 +166,7 @@ def get_odds():
     if response.status_code == 200:
         data = response.json()
         lines = "lines from Bet MGM:\n\n"
-        for sport in data[:15]:
+        for sport in data:
             try: 
                 ml = sport["bookmakers"][0]["markets"][0]['outcomes']
                 spread = sport["bookmakers"][0]["markets"][1]['outcomes']
@@ -186,7 +188,7 @@ def get_score(sport):
     response = requests.get(root)
     if response.status_code == 200:
         data = response.json()
-        scores = "scores: \n\n"
+        scores = "\n"
         for score in data[:15]:
             try: 
                 home = score["scores"][0]
@@ -212,7 +214,7 @@ def get_stock(symbol):
         stock_data = yf.Ticker(symbol)
         # get the most recent financial data
         info = stock_data.info
-        stock_info = "\nstock info: \n"
+        stock_info = "\n"
         latest_price = stock_data.history(period='1d')['Close'].iloc[-1]
         stock_info = stock_info + "most recent price: $" + str(round(latest_price,2)) + "\n"
         stock_info = stock_info + "trailing price to earnings P/E: " + str(info['trailingPE']) + "\n"
@@ -224,9 +226,15 @@ def get_stock(symbol):
     except Exception as e:
         print(e)
         return "something went wrong brah. you sure that is a stock ticker?"
+    
+# def get_word():
+#     w = WordofTheDay()
+#     print(w)
+#     return w
 
 ## split message chunks
-
+def split_string_into_chunks(input_string, chunk_size=1000):
+    return [input_string[i:i+chunk_size] for i in range(0, len(input_string), chunk_size)]
 
 ## message handler
 def handle_message(content):
@@ -234,21 +242,34 @@ def handle_message(content):
 
     if message == "$based":
         help = "\n"
-        help = "`$based` tells you what the based bot can do\n"
-        help = help + "`$ping` tag everyone in the discord\n"
-        help = help + "`$apex` tells you what the current apex maps are\n"
-        help = help + "`$gpt` talk to gpt (the woke one)\n"
-        help = help + "`$code` make gpt write code\n"
-        help = help + "`$search` search the internet like google but with an AI\n"
+        help = "`$based` tells you what the based bot can do\n\n"
+        help = help + "\n**general**: \n"
+        help = help + "`$ping` alert everyone in the discord with the bat signal\n"
+        help = help + "\n**gaming**: \n"
+        help = help + "`$apex` tells you what the current apex legends maps are\n"
+        help = help + "`$squadup` tell the discord to hop on apex legends\n"
+        help = help + "\n**sports**: \n"
         help = help + "`$sports` gambling lines for the day\n"
         help = help + "`$nba` nba scores\n"
         help = help + "`$mlb` mlb scores\n"
         help = help + "`$nfl` nfl scores\n"
-        help = help + "`$squadup` tell the discord to hop on apex\n"
-        help = help + "`$bitcoin` info about bitcoin\n"
+        help = help + "`$nhl` nhl scores\n"
+        help = help + "`$mma` mma results\n"
+        help = help + "\n**search and ai**: \n"
+        help = help + "`$search` search the internet like google, but with an ai\n"
+        help = help + "`$gpt` talk to gpt (the woke one)\n"
+        help = help + "`$code` make gpt write code\n"
+        help = help + "\n**financial**: \n"
+        help = help + "`$stock TICKER`: shows the financials and price for the stock `TICKER`, example `$stock aapl`\n"
+        help = help + "`$bitcoin` info about bitcoin, including price and on-chain data\n"
         help = help + "`$mempool` shows the 10 most recent transactions on bitcoin\n"
+        # help = help + "\n`$donate` give the bot money\n"
         return help
     
+    # if message == "$word":
+    #     w = get_word()
+    #     return w
+
     if message == "$sports":
         lines = get_odds()
         return lines
@@ -263,6 +284,14 @@ def handle_message(content):
     
     if message == "$nfl":
         scores = get_score("americanfootball_nfl")
+        return scores
+    
+    if message == "$nhl":
+        scores = get_score("icehockey_nhl")
+        return scores
+    
+    if message == "$mma":
+        scores = get_score("mma_mixed_martial_arts")
         return scores
 
     if message == "$mempool":
@@ -319,12 +348,15 @@ def handle_message(content):
 async def send_message(message, content):
     try:
         response = handle_message(content=content)
-        await message.channel.send(response)
+        chunks = split_string_into_chunks(response)
+        print(chunks)
+        for chunk in chunks:
+            await message.channel.send(chunk)
     except Exception as e:
         print(e)
 
 def message_guard(message):
-    if message == "$apex" or message == "$bitcoin" or message == "$mempool" or "$search" in message or "$gpt" in message or "$code" in message or message == "$ping" or message == "$squadup" or message == "$based" or message == "$sports" or message == "$nba" or message == "$mlb" or message == "$nfl" or "$stock" in message:
+    if message == "$apex" or message == "$bitcoin" or message == "$mempool" or "$search" in message or "$gpt" in message or "$code" in message or message == "$ping" or message == "$squadup" or message == "$based" or message == "$sports" or message == "$nba" or message == "$mlb" or message == "$nfl"  or message == "$mma" or message == "$nhl" or "$stock" in message:
         return False
     return True
 
