@@ -42,8 +42,8 @@ def get_mempool():
         data = response.json()
         formatted_string = ""
         for tx in data:
-            formatted_string = formatted_string + "`" + str(tx["txid"]) + "`" + "\n"
-            formatted_string = formatted_string + "`" + str(tx["value"] / 10_000_000) + " bitcoin` was sent"  + "\n"
+            formatted_string = formatted_string + "`transaction id: " + str(tx["txid"]) + "`" + "\n\n"
+            formatted_string = formatted_string + "`" + str(tx["value"] / 10_000_000) + " bitcoin was sent" + "`" + "\n"
             formatted_string = formatted_string + "` transaction size is " + str(tx["vsize"]) + " vbytes for a fee of " + str(tx["fee"]) + " satoshis" + "`" + "\n\n"
 
         return "recent bitcoin transactions: \n\n" + formatted_string
