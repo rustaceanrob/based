@@ -240,9 +240,10 @@ def handle_message(content):
 
     if message == "$based":
         help = "\n"
-        help = "`$based` tells you what the based bot can do\n\n"
+        help = "`$based` tells you what the based bot can do\n"
         help = help + "\n**general**: \n"
         help = help + "`$ping` alert everyone in the discord with the bat signal\n"
+        help = help + "`$boobs` show the boob gif\n"
         help = help + "\n**gaming**: \n"
         help = help + "`$apex` tells you what the current apex legends maps are\n"
         help = help + "`$squadup` tell the discord to hop on apex legends\n"
@@ -339,7 +340,10 @@ def handle_message(content):
     
     if message == "$ping":
         return "@everyone " + "https://tenor.com/view/signs-batman-signal-light-gif-16095450"
-    
+
+    if message == "$boobs":
+        return "https://tenor.com/view/bouncing-boobs-gif-24797099"
+      
     return 
 
 ## send a message back to the channel that requested it
@@ -353,7 +357,7 @@ async def send_message(message, content):
         print(e)
 
 def message_guard(message):
-    if message == "$apex" or message == "$bitcoin" or message == "$mempool" or "$search" in message or "$gpt" in message or "$code" in message or message == "$ping" or message == "$squadup" or message == "$based" or message == "$sports" or message == "$nba" or message == "$mlb" or message == "$nfl"  or message == "$mma" or message == "$nhl" or "$stock" in message:
+    if message == "$apex" or message == "$bitcoin" or message == "$mempool" or "$search" in message or "$gpt" in message or "$code" in message or message == "$ping" or message == "$squadup" or message == "$based" or message == "$sports" or message == "$nba" or message == "$mlb" or message == "$nfl"  or message == "$mma" or message == "$nhl" or "$stock" in message or message == "$boobs":
         return False
     return True
 
