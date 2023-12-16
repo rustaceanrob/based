@@ -6,11 +6,18 @@ from metaphor_python import Metaphor
 from openai import OpenAI
 from discord.ext import commands
 import yfinance as yf
+import random
 
 
 load_dotenv()
 APEX = os.environ["APEX_TOKEN"]
 SPORTS = os.environ["SPORTS_TOKEN"]
+
+boobs = ["https://tenor.com/view/boobs-gif-18384710", "https://tenor.com/view/big-tits-boob-bounce-boobs-tits-jiggle-gif-24649048", "https://tenor.com/view/amouranth-redhead-boobs-lingerie-cleavage-gif-19626732", 
+         "https://tenor.com/view/amouranth-redhead-boobs-lingerie-cleavage-gif-19626732", "https://tenor.com/view/big-boobs-blonde-gif-19769460", "https://tenor.com/view/bouncing-boobs-gif-24797099",
+         "https://tenor.com/view/stepford-wife-gif-18536100", "https://tenor.com/view/erica-durance-underwear-bra-lingerie-beautiful-gif-20729810",
+         "https://tenor.com/view/sejinming-koreancutie-seductivekorean-petrichor-gif-21427854", "https://tenor.com/view/sivan-herman-gif-18592936",
+         "https://tenor.com/view/heyy-walking-smiling-how-you-doin-bounce-gif-19907316", "https://tenor.com/view/boob-bounce-gif-22260694"]
 
 endpoints = { "mempool": "https://www.blockstream.info/api/mempool/recent", "height":  "https://www.blockstream.info/api/blocks/tip/height",
               "mempool_stats":  "https://www.blockstream.info/api/mempool", "fees": "https://www.blockstream.info/api/fee-estimates",
@@ -342,7 +349,7 @@ def handle_message(content):
         return "@everyone " + "https://tenor.com/view/signs-batman-signal-light-gif-16095450"
 
     if message == "$boobs":
-        return "https://tenor.com/view/bouncing-boobs-gif-24797099"
+        return random.choice(boobs)
       
     return 
 
