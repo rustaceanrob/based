@@ -367,10 +367,10 @@ def handle_message(content):
         response = get_code(prompt=prompt)
         return response
     
-    if "$gpt" in message:
-        prompt = message.split("$gpt")[1]
-        response = get_minstral(prompt=prompt)
-        return response
+    # if "$gpt" in message:
+    #     prompt = message.split("$gpt")[1]
+    #     response = get_minstral(prompt=prompt)
+    #     return response
 
     if message == "$apex":
         maps = get_apex()
