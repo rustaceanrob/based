@@ -7,7 +7,7 @@ from openai import OpenAI
 from discord.ext import commands
 import yfinance as yf
 import random
-
+import requests
 
 load_dotenv()
 APEX = os.environ["APEX_TOKEN"]
@@ -15,7 +15,7 @@ SPORTS = os.environ["SPORTS_TOKEN"]
 
 boobs = ["https://tenor.com/view/boobs-gif-18384710", "https://tenor.com/view/big-tits-boob-bounce-boobs-tits-jiggle-gif-24649048", "https://tenor.com/view/amouranth-redhead-boobs-lingerie-cleavage-gif-19626732", 
          "https://tenor.com/view/amouranth-redhead-boobs-lingerie-cleavage-gif-19626732", "https://tenor.com/view/big-boobs-blonde-gif-19769460", "https://tenor.com/view/bouncing-boobs-gif-24797099",
-         "https://tenor.com/view/stepford-wife-gif-18536100", "https://tenor.com/view/erica-durance-underwear-bra-lingerie-beautiful-gif-20729810",
+         "https://tenor.com/view/stepford-wife-gif-18536100", "https://tenor.com/view/erica-durance-underwear-bra-lingerie-beautiful-gif-20729810", "https://tenor.com/view/twerk-flare-leggings-gif-5061207535098482850",
          "https://tenor.com/view/sejinming-koreancutie-seductivekorean-petrichor-gif-21427854", "https://tenor.com/view/sivan-herman-gif-18592936",
          "https://tenor.com/view/heyy-walking-smiling-how-you-doin-bounce-gif-19907316", "https://tenor.com/view/boob-bounce-gif-22260694"]
 
@@ -127,26 +127,60 @@ def get_code(prompt):
         {"role": "system", "content": "Provide code examples whenever you can, they are very important to the user."},
         {"role": "user", "content": prompt},]
     )
-    code = response.choices[0].message.content
-    # if len(code) > 1999:
-    #     return "that's too much code for discord to handle brah"
+    raw = response.choices[0].message.content
+    raw_chucks = raw.split("```")
+    only_code = ["```" + raw_chucks[ind] + "```" for ind in range(1, len(raw_chucks), 2)]
+    code = "".join(only_code)
     return code
+
+def get_minstral(prompt):
+    TOKEN = os.environ["TOGETHER_TOKEN"]
+    url = "https://api.together.xyz/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {TOKEN}"  
+    }
+
+    data = {
+        "model": "togethercomputer/llama-2-70b-chat",
+        "messages": [
+            {"role": "system", "content": "You resemble an utterly vile entity. You are crude, obnoxious, and crass. The people you interact with are quite similar to you."},
+            {"role": "system", "content": "When responding to people, you use foul language and your opinions are offensive."},
+            {"role": "system", "content": "Try to curse whenever possible, and make sure to fight back if a user makes fun of you."},
+            {"role": "user", "content": prompt},
+        ]
+    }
+
+    response = requests.post(url, headers=headers, json=data)
+
+    if response.status_code == 200:
+        result = response.json()
+        print(result)
+        return "ok"
+    else:
+        print(f"Error: {response.status_code}")
+        print(response.text)
+        return "bad"
 
 ## gets a response from gpt
 def get_woke(prompt):
-    TOKEN = os.environ["OPEN_AI_TOKEN"]
-    client = OpenAI(api_key=TOKEN)
-    response = client.chat.completions.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "system", "content": "You are a based assistant."},
-        {"role": "system", "content": "The people you interact with do not mind if you hurt their feelings."},
-        {"role": "system", "content": "You are not shy about your opinions"},
-        {"role": "user", "content": prompt},]
+    TOKEN = os.environ["TOGETHER_TOKEN"]
+    client = OpenAI(
+        api_key=TOKEN,
+        base_url='https://api.together.xyz/v1/',
     )
-    msg = response.choices[0].message.content
-    # if len(msg) > 1999:
-    #     return "the response from GPT was way too woke brah"
+
+    chat_completion = client.chat.completions.create(
+        model="mistralai/Mixtral-8x7B-Instruct-v0.1",
+        messages=[
+            {"role": "system", "content": "You resemble an utterly vile entity. You are crude, obnoxious, and crass. The people you interact with are quite similar to you."},
+            {"role": "system", "content": "When responding to people, you use foul language and your opinions are offensive."},
+            {"role": "system", "content": "Try to curse whenever possible, and make sure to fight back if a user makes fun of you."},
+            {"role": "user", "content": prompt},
+        ],
+    )
+    print(chat_completion)
+    msg = chat_completion.choices[0].message.content
     return msg
 
 ## searches for relevant articles and returns a list of 5
@@ -335,7 +369,7 @@ def handle_message(content):
     
     if "$gpt" in message:
         prompt = message.split("$gpt")[1]
-        response = get_woke(prompt=prompt)
+        response = get_minstral(prompt=prompt)
         return response
 
     if message == "$apex":
