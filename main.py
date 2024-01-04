@@ -135,39 +135,40 @@ def get_code(prompt):
 
 def get_minstral(prompt):
     TOKEN = os.environ["TOGETHER_TOKEN"]
-    url = "https://api.together.xyz/v1/chat/completions"
+    url = "https://api.together.xyz/v1/completions"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {TOKEN}"  
+        "Authorization": f"Bearer {TOKEN}"  # Replace with your actual API key
     }
 
     data = {
-        "model": "togethercomputer/llama-2-70b-chat",
-        "messages": [
-            {"role": "system", "content": "You resemble an utterly vile entity. You are crude, obnoxious, and crass. The people you interact with are quite similar to you."},
-            {"role": "system", "content": "When responding to people, you use foul language and your opinions are offensive."},
-            {"role": "system", "content": "Try to curse whenever possible, and make sure to fight back if a user makes fun of you."},
-            {"role": "user", "content": prompt},
-        ]
+        "model": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+        "prompt": prompt,
+        "max_tokens": 256,
+        "stop": ".",
+        "temperature": 1.2,
+        "top_p": 0.7,
+        "top_k": 50,
+        "repetition_penalty": 1
     }
 
     response = requests.post(url, headers=headers, json=data)
 
     if response.status_code == 200:
         result = response.json()
-        print(result)
-        return "ok"
+        res = result["choices"][0]["text"]
+        return res
     else:
         print(f"Error: {response.status_code}")
         print(response.text)
-        return "bad"
+        return "my peepee fell off :("
 
 ## gets a response from gpt
 def get_woke(prompt):
     TOKEN = os.environ["TOGETHER_TOKEN"]
     client = OpenAI(
         api_key=TOKEN,
-        base_url='https://api.together.xyz/v1/',
+        base_url='https://api.together.xyz/v1',
     )
 
     chat_completion = client.chat.completions.create(
@@ -297,7 +298,8 @@ def handle_message(content):
         help = help + "`$mma` mma results\n"
         help = help + "\n**search and ai**: \n"
         help = help + "`$search` search the internet like google, but with an ai\n"
-        help = help + "`$gpt` talk to gpt (the woke one)\n"
+        # help = help + "`$gpt` talk to gpt (the woke one)\n"
+        help = help + "`$idiot` talk to a fucking idiot\n"
         help = help + "`$code` make gpt write code\n"
         help = help + "\n**financial**: \n"
         help = help + "`$stock TICKER`: shows the financials and price for the stock `TICKER`, example `$stock aapl`\n"
@@ -367,10 +369,15 @@ def handle_message(content):
         response = get_code(prompt=prompt)
         return response
     
-    # if "$gpt" in message:
-    #     prompt = message.split("$gpt")[1]
-    #     response = get_minstral(prompt=prompt)
-    #     return response
+    if "$idiot" in message:
+        prompt = message.split("$idiot")[1]
+        response = get_minstral(prompt=prompt)
+        return response
+    
+    if "$gpt" in message:
+        prompt = message.split("$gpt")[1]
+        response = get_woke(prompt=prompt)
+        return response
 
     if message == "$apex":
         maps = get_apex()
@@ -398,7 +405,7 @@ async def send_message(message, content):
         print(e)
 
 def message_guard(message):
-    if message == "$apex" or message == "$bitcoin" or message == "$mempool" or "$search" in message or "$gpt" in message or "$code" in message or message == "$ping" or message == "$squadup" or message == "$based" or message == "$sports" or message == "$nba" or message == "$mlb" or message == "$nfl"  or message == "$mma" or message == "$nhl" or "$stock" in message or message == "$boobs":
+    if message == "$apex" or message == "$bitcoin" or message == "$mempool" or "$search" in message or "$gpt" in message or "$idiot" in message or "$code" in message or message == "$ping" or message == "$squadup" or message == "$based" or message == "$sports" or message == "$nba" or message == "$mlb" or message == "$nfl"  or message == "$mma" or message == "$nhl" or "$stock" in message or message == "$boobs":
         return False
     return True
 
