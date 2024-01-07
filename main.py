@@ -422,6 +422,7 @@ def run_bot():
 
     @bot.event
     async def on_message(message):
+        print(message.author)
         content = message.content
 
         if message_guard(message=content): return
